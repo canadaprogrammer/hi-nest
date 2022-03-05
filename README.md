@@ -28,7 +28,7 @@
 
 ## Controller
 
-- Take URL and execute functions
+- Controller takes URL and executes functions
 
 - No space between a decorator and the function
 
@@ -41,6 +41,8 @@
 
   - On browser, `localhost:3000/hello`
 
+    - return: `Hello Everyone`
+
   - ```ts
     @Post('/hello')
     sayHello(): string {
@@ -48,7 +50,25 @@
     }
     ```
 
-  - return: `{"statusCode":404,"message":"Cannot GET /hello","error":"Not Found"}`
+    - return: `{"statusCode":404,"message":"Cannot GET /hello","error":"Not Found"}`
 
+## Services
 
+- Service execute business logic.
 
+  - On Controller
+
+    - ```ts
+      @Get('/hello')
+      sayHello: string {
+        return this.appService.getHi();
+      }
+      ```
+
+  - On Service
+
+    - ```ts
+      getHi(): string {
+        return 'Hello Everyone';
+      }
+      ```
