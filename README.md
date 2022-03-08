@@ -144,19 +144,19 @@
 
 - `nest generate controller movies`
 
-- It creates `src/movies/movies.controller.spec.ts` and `src/movies/movies.controller.ts`
+  - It creates `src/movies/movies.controller.spec.ts` and `src/movies/movies.controller.ts`
 
-- The controller is added on `src/app.modules.ts`
+  - It updates `src/app.modules.ts`
 
-  - ```ts
-    import { MoviesController } from './movies/movies.controller';
+    - ```ts
+      import { MoviesController } from './movies/movies.controller';
 
-    @Module({
-      imports: [],
-      controllers: [MoviesController],
-      providers: [],
-    })
-    ```
+      @Module({
+        imports: [],
+        controllers: [MoviesController],
+        providers: [],
+      })
+      ```
 
 - Delete `src/movies/movies.controller.spec.ts`
 
@@ -218,3 +218,126 @@
   - `localhost:3000/movies` returns 'This will return all movies'
 
   - `localhost:3000/movies/123` returns 'This will return the movie with the id: 123'
+
+# Movies Service
+
+- `nest generate service movies`
+
+  - It creates `src/movies/movies.service.spec.ts` and `src/movies/movies.service.ts`
+
+  - It updates `src/app.modules.ts`
+
+    - ```ts
+      import { MoviesService } from './movies/movies.service';
+
+      @Module({
+        imports: [],
+        controllers: [],
+        providers: [MoviesService],
+      })
+      ```
+
+- Delete `src/movies/movies.service.spec.ts`
+
+- Create `/movies/entities/movie.entity.ts`
+
+  - ```ts
+    export class Movie {
+      id: number;
+      title: string;
+      year: number;
+      genres: string[];
+    }
+    ```
+
+- On `movies.service.ts`
+
+  - ```ts
+    import { Injectable, NotFoundException } from '@nestjs/common';
+    import { Movie } from './entities/movie.entity';
+
+    @Injectable()
+    export class MoviesService {
+      private movies: Movie[] = [];
+
+      getAll(): Movie[] {
+        return this.movies;
+      }
+
+      getOne(id: string): Movie {
+        // return this.movies.find((movie) => movie.id === parseInt(id));
+        const movie = this.movies.find((movie) => movie.id === +id);
+        if (!movie) {
+          throw new NotFoundException(`Movie with ID ${id} not found.`);
+        }
+        return movie;
+      }
+
+      remove(id: string) {
+        this.getOne(id);
+        this.movies = this.movies.filter((movie) => movie.id !== +id);
+      }
+
+      create(movieData) {
+        this.movies.push({
+          id: this.movies.length + 1,
+          ...movieData,
+        });
+      }
+
+      update(id: string, updateData) {
+        const movie = this.getOne(id);
+        this.remove(id);
+        this.movies.push({ ...movie, ...updateData });
+      }
+    }
+    ```
+
+- On `movies.controller.ts`
+
+  - ```ts
+    import {
+      Body,
+      Controller,
+      Delete,
+      Get,
+      Param,
+      Patch,
+      Post,
+      Query,
+    } from '@nestjs/common';
+    import { MoviesService } from './movies.service';
+    @Controller('movies')
+    export class MoviesController {
+      constructor(private readonly moviesService: MoviesService) {}
+      @Get()
+      getAll() {
+        return this.moviesService.getAll();
+      }
+
+      @Get('search')
+      search(@Query('year') searchingYear: string) {
+        return `We are searching for a movie made after: ${searchingYear}`;
+      }
+
+      @Get(':id')
+      getOne(@Param('id') movieId: string) {
+        return this.moviesService.getOne(movieId);
+      }
+
+      @Post()
+      create(@Body() movieData) {
+        return this.moviesService.create(movieData);
+      }
+
+      @Delete(':id')
+      remove(@Param('id') movieId: string) {
+        return this.moviesService.remove(movieId);
+      }
+
+      @Patch(':id')
+      update(@Param('id') movieId: string, @Body() updateData) {
+        return this.moviesService.update(movieId, updateData);
+      }
+    }
+    ```
