@@ -9,6 +9,8 @@ import {
   Query,
 } from '@nestjs/common';
 import { MoviesService } from './movies.service';
+import { CreateMovieDto } from './dto/create-movie.dto';
+
 @Controller('movies')
 export class MoviesController {
   constructor(private readonly moviesService: MoviesService) {}
@@ -28,7 +30,7 @@ export class MoviesController {
   }
 
   @Post()
-  create(@Body() movieData) {
+  create(@Body() movieData: CreateMovieDto) {
     return this.moviesService.create(movieData);
   }
 

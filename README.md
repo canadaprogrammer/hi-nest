@@ -341,3 +341,115 @@
       }
     }
     ```
+
+# Data Transfer Object (DTO) and Validation
+
+- DTO: An object that carries data between processes.
+
+- `npm i class-validator class-transformer`
+
+- Create `/src/movies/dto/create-movie.dto.ts`
+
+  - ```ts
+    import { IsString, IsNumber } from 'class-validator';
+
+    export class CreateMovieDto {
+      @IsString()
+      readonly title: string;
+
+      @IsNumber()
+      readonly year: number;
+
+      @IsString({ each: true })
+      readonly genres: string[];
+    }
+    ```
+
+- On `movies.controller.ts`
+
+  - ```ts
+    import { CreateMovieDto } from './dto/create-movie.dto';
+
+      ...
+
+      @Post()
+      create(@Body() movieData: CreateMovieDto) {
+        return this.moviesService.create(movieData);
+      }
+    ```
+
+- On `movies.service.ts`
+
+  - ```ts
+    import { CreateMovieDto } from './dto/create-movie.dto';
+
+      ...
+
+      create(movieData: CreateMovieDto) {
+        this.movies.push({
+          id: this.movies.length + 1,
+          ...movieData,
+        });
+      }
+    ```
+
+## `ValidationPipe` makes use of the powerful `class-validator` package and its declarative validation decorators.
+
+- On `main.ts`
+
+  - ```ts
+    import { ValidationPipe } from '@nestjs/common';
+    import { NestFactory } from '@nestjs/core';
+    import { AppModule } from './app.module';
+
+    async function bootstrap() {
+      const app = await NestFactory.create(AppModule);
+      app.useGlobalPipes(
+        new ValidationPipe({
+          whitelist: true,
+          forbidNonWhitelisted: true,
+        }),
+      );
+      await app.listen(3000);
+    }
+    bootstrap();
+    ```
+
+  - Body input of create: `{"hacked": "this data was hacked"}`
+
+  - output
+
+    - ```json
+      {
+        "statusCode": 400,
+        "message": [
+          "property hacked should not exist", // It's from `forbidNonWhitelisted: true`
+          "title must be a string",
+          "year must be a number conforming to the specified constraints",
+          "each value in genres must be a string"
+        ],
+        "error": "Bad Request"
+      }
+      ```
+
+- `class-validator` options
+
+  | Option                   | Type     | Description                                                                                                                         |
+  | ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+  | enableDebugMessages      | boolean  | If set to true, validator will print extra warning messages to the console when something is not right.                             |
+  | skipUndefinedProperties  | boolean  | If set to true, validator will skip validation of all properties that are null in the validating object.                            |
+  | skipNullProperties       | boolean  | If set to true, validator will skip validation of all properties that are null or undefined in the validating object.               |
+  | skipMissingProperties    | boolean  | If set to true, validator will skip validation of all properties that are missing in the validating object.                         |
+  | **whitelist**            | boolean  | If set to true, validator will strip validated (returned) object of any properties that do not use any validation decorators.       |
+  | **forbidNonWhitelisted** | boolean  | If set to true, instead of stripping non-whitelisted properties validator will throw an exception.                                  |
+  | forbidUnknownValues      | boolean  | If set to true, attempts to validate unknown objects fail immediately.                                                              |
+  | disableErrorMessages     | boolean  | If set to true, validation errors will not be returned to the client.                                                               |
+  | errorHttpStatusCode      | number   | This setting allows you to specify which exception type will be used in case of an error. By default it throws BadRequestException. |
+  | exceptionFactory         | Function | Takes an array of the validation errors and returns an exception object to be thrown.                                               |
+  | groups                   | string[] | Groups to be used during validation of the object.                                                                                  |
+  | always                   | boolean  | Set default for always option of decorators. Default can be overridden in decorator options                                         |
+  | strictGroups             | boolean  | If groups is not given or is empty, ignore decorators with at least one group.                                                      |
+  | dismissDefaultMessages   | boolean  | If set to true, the validation will not use default messages. Error message always will be undefined if its not explicitly set.     |
+  | validationError.target   | boolean  | Indicates if target should be exposed in ValidationError.                                                                           |
+  | validationError.value    | boolean  | Indicates if validated value should be exposed in ValidationError.                                                                  |
+  | stopAtFirstError         | boolean  | When set to true, validation of the given property will stop after encountering the first error. Defaults to false.                 |
