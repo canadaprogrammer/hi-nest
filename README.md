@@ -453,3 +453,68 @@
   | validationError.target   | boolean  | Indicates if target should be exposed in ValidationError.                                                                           |
   | validationError.value    | boolean  | Indicates if validated value should be exposed in ValidationError.                                                                  |
   | stopAtFirstError         | boolean  | When set to true, validation of the given property will stop after encountering the first error. Defaults to false.                 |
+
+## Transform payload objects
+
+- The `ValidationPipe` can automatically transform payloads to be objects typed according to their DTO classes. To enable auto-transformation, set transform to true.
+
+- On `main.ts`
+
+  - ```ts
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    ```
+
+- On `movies.service.ts`, change movieId type to number
+
+  - ```ts
+    getOne(id: number): Movie {
+      const movie = this.movies.find((movie) => movie.id === id);
+      if (!movie) {
+        throw new NotFoundException(`Movie with ID ${id} not found.`);
+      }
+      return movie;
+    }
+
+    remove(id: number) {
+      this.getOne(id);
+      this.movies = this.movies.filter((movie) => movie.id !== id);
+    }
+
+    create(movieData: CreateMovieDto) {
+      this.movies.push({
+        id: this.movies.length + 1,
+        ...movieData,
+      });
+    }
+
+    update(id: number, updateData) {
+      const movie = this.getOne(id);
+      this.remove(id);
+      this.movies.push({ ...movie, ...updateData });
+    }
+    ```
+
+- On `movies.controller.ts`, change movieId type to number
+
+  - ```ts
+    @Get(':id')
+    getOne(@Param('id') movieId: number) {
+      return this.moviesService.getOne(movieId);
+    }
+
+    @Delete(':id')
+    remove(@Param('id') movieId: number) {
+      return this.moviesService.remove(movieId);
+    }
+
+    @Patch(':id')
+    update(@Param('id') movieId: number, @Body() updateData) {
+      return this.moviesService.update(movieId, updateData);
+    }
+    ```
