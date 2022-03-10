@@ -698,3 +698,58 @@
         this.movies.push({ ...movie, ...updateData });
       }
     ```
+
+# Modules and Dependency Injection
+
+- Create Movies Module
+
+  - `nest g mo movies`
+
+- On `/movies/movies.module.ts`
+
+  - ```ts
+    import { Module } from '@nestjs/common';
+    import { MoviesController } from './movies.controller';
+    import { MoviesService } from './movies.service';
+
+    @Module({
+      controllers: [MoviesController],
+      providers: [MoviesService],
+    })
+    export class MoviesModule {}
+    ```
+
+- Create App Controller and App Service
+
+  - `nest g co app`
+
+- Move `app.controller.ts` from `/src/app` to `/src` and remove `/app`
+
+- On `app.controller.ts`
+
+  - ```ts
+    import { Controller, Get } from '@nestjs/common';
+
+    @Controller('')
+    export class AppController {
+      @Get()
+      home() {
+        return 'welcome to my Movie API';
+      }
+    }
+    ```
+
+- On `app.module.ts`
+
+  - ```ts
+    import { Module } from '@nestjs/common';
+    import { MoviesModule } from './movies/movies.module';
+    import { AppController } from './app.controller';
+
+    @Module({
+      imports: [MoviesModule],
+      controllers: [AppController],
+      providers: [],
+    })
+    export class AppModule {}
+    ```
