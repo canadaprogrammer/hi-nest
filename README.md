@@ -753,3 +753,89 @@
     })
     export class AppModule {}
     ```
+
+# Testing in Nest
+
+- Jest is a delightful JavaScript Testing Framework with a focus on simplicity.
+
+- Keep your test files located near the classes they test. Testing files should have a `.spec` or `.test` suffix.
+
+- `num run test:cov`: It's looking for `.spec.ts` and it will show testing coverage.
+
+- `npm run test:watch`
+
+## Unit Test
+
+- Create `/movies/movies.service.spec.ts`
+
+  - ```ts
+    import { NotFoundException } from '@nestjs/common';
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { MoviesService } from './movies.service';
+
+    describe('MoviesService', () => {
+      let service: MoviesService;
+
+      beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+          providers: [MoviesService],
+        }).compile();
+
+        service = module.get<MoviesService>(MoviesService);
+      });
+
+      it('should be defined', () => {
+        expect(service).toBeDefined();
+      });
+    });
+    ```
+
+### Test `getAll()`
+
+- On `/movies/movies.service.spec.ts`
+
+  - ```ts
+    ...
+    describe('MoviesService', () => {
+      ...
+
+      describe('getAll', () => {
+        it('should return an array', () => {
+          const result = service.getAll();
+
+          expect(result).toBeInstanceOf(Array);
+        });
+      });
+    ```
+
+### Test `getOne(id)`
+
+- On `/movies/movies.service.spec.ts`
+
+  - ```ts
+    ...
+    describe('MoviesService', () => {
+      ...
+
+      describe('getOne', () => {
+        it('Should return a movie', () => {
+          service.create({
+            title: "Test Movie",
+            genres: ['test'],
+            year: 2000,
+          });
+
+          const movie = service.getOne(1);
+          expect(movie).toBeDefined();
+          expect(movie.id).toEqual(1);
+        });
+        it('should throw 404 error', () => {
+          try {
+            service.getOne(999);
+          } catch (e) {
+            expect(e).toBeInstanceOf(NotFoundException);
+            expect(e.message).toEqual('Movie with ID 999 not found.');
+          }
+        });
+      });
+    ```
