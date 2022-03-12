@@ -839,3 +839,78 @@
         });
       });
     ```
+
+### Test `remove(id)`
+
+- ```ts
+  describe('remove', () => {
+    it('Removes a movie', () => {
+      service.create({
+        title: 'Test Movie1',
+        genres: ['Test'],
+        year: 2020,
+      });
+      service.create({
+        title: 'Test Movie2',
+        genres: ['Test'],
+        year: 2020,
+      });
+      const beforeRemove = service.getAll().length;
+      service.remove(1);
+      const aftterRemove = service.getAll().length;
+      expect(aftterRemove).toBeLessThan(beforeRemove);
+    });
+
+    it('should throw 404 error', () => {
+      try {
+        service.remove(999);
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+      }
+    });
+  });
+  ```
+
+### Test `create()`
+
+- ```ts
+  describe('create', () => {
+    it('should create a movie', () => {
+      const beforeCreate = service.getAll().length;
+      service.create({
+        title: 'Test Movie1',
+        genres: ['Test'],
+        year: 2020,
+      });
+      const afterCreate = service.getAll().length;
+      console.log(beforeCreate, afterCreate);
+      expect(afterCreate).toBeGreaterThan(beforeCreate);
+    });
+  });
+  ```
+
+### Test `update(id, Movie)`
+
+- ```ts
+  describe('update', () => {
+    it('should update a movie', () => {
+      service.create({
+        title: 'Test Movie1',
+        genres: ['Test'],
+        year: 2020,
+      });
+
+      service.update(1, { year: 2021 });
+      const movie = service.getOne(1);
+      expect(movie.year).toEqual(2021);
+    });
+
+    it('should throw 404 error', () => {
+      try {
+        service.update(999, {});
+      } catch (e) {
+        expect(e).toBeInstanceOf(NotFoundException);
+      }
+    });
+  });
+  ```
