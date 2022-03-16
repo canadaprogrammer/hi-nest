@@ -756,13 +756,71 @@
 
 # Testing in Nest
 
-- Jest is a delightful JavaScript Testing Framework with a focus on simplicity.
+- `Jest` is a delightful JavaScript Testing Framework with a focus on simplicity.
 
 - Keep your test files located near the classes they test. Testing files should have a `.spec` or `.test` suffix.
 
 - `num run test:cov`: It's looking for `.spec.ts` and it will show testing coverage.
 
 - `npm run test:watch`
+
+## Methods of Jest
+
+- `beforeEach(fn, timeout)`
+
+  - Runs a function before each of the tests in this file runs. If the function returns a promise or is a generator, Jest waits for that promise to resolve before running the test.
+
+  - Optionally, you can provide a timeout (in milliseconds) for specifying how long to wait before aborting. Note: The default timeout is 5 seconds.
+
+  - This is often useful if you want to reset some global state that will be used by many tests.
+
+  - If beforeEach is inside a describe block, it runs for each test in the describe block.
+
+  - If you only need to run some setup code once, before any tests run, use `beforeAll` instead.
+
+- `beforeAll(fn, timeout)`
+
+  - Runs a function before any of the tests in this file run. If the function returns a promise or is a generator, Jest waits for that promise to resolve before running tests.
+
+  - Optionally, you can provide a timeout (in milliseconds) for specifying how long to wait before aborting. Note: The default timeout is 5 seconds.
+
+  - This is often useful if you want to set up some global state that will be used by many tests.
+
+- `describe(name, fn)`
+
+  - It creates a block that groups together several related tests.
+
+  - This isn't required - you can write the `test` blocks directly at the top level. But this can be handy if you prefer your tests to be organized into groups.
+
+- `test(name, fn, timeout)`
+
+  - Also under the alias: `it(name, fn, timeout)`
+
+  - All you need in a test file is the test method which runs a test.
+
+  - The first argument is the test name; the second argument is a function that contains the expectations to test. The third argument (optional) is timeout (in milliseconds) for specifying how long to wait before aborting. Note: The default timeout is 5 seconds.
+
+  - Note: If a **promise is returned** from test, Jest will wait for the promise to resolve before letting the test complete. Jest will also wait if you **provide an argument to the test function**, usually called `done`. This could be handy when you want to test callbacks.
+
+    - For example, let's say fetchBeverageList() returns a promise that is supposed to resolve to a list that has lemon in it. You can test this with:
+
+      - ```ts
+        test('has lemon in it', () => {
+          return fetchBeverageList().then((list) => {
+            expect(list).toContain('lemon');
+          });
+        });
+        ```
+
+        - Even though the call to test will return right away, the test doesn't complete until the promise resolves as well.
+
+- `test.todo(name)`
+
+  - Also under the alias: `it.todo(name)`
+
+  - Use `test.todo` when you are planning on writing tests. These tests will be highlighted in the summary output at the end so you know how many tests you still need todo.
+
+  - Note: If you supply a test callback function then the test.todo will throw an error. If you have already implemented the test and it is broken and you do not want it to run, then use `test.skip` instead.
 
 ## Unit Test
 
@@ -818,7 +876,7 @@
       ...
 
       describe('getOne', () => {
-        it('Should return a movie', () => {
+        it('should return a movie', () => {
           service.create({
             title: "Test Movie",
             genres: ['test'],
@@ -922,18 +980,39 @@
 - On `test/app.e2e-spec.ts`
 
   - ```ts
+    import { Test, TestingModule } from '@nestjs/testing';
+    import { INestApplication } from '@nestjs/common';
+    import * as request from 'supertest';
+    import { AppModule } from './../src/app.module';
+
     describe('AppController (e2e)', () => {
-      ...
+      let app: INestApplication;
+
+      beforeAll(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();
+      });
+
+      test('/ (GET)', () => {
+        return request(app.getHttpServer())
+          .get('/')
+          .expect(200)
+          .expect('welcome to my Movie API');
+      });
 
       describe('/movies', () => {
-        it('GET', () => {
+        test('GET', () => {
           return request(app.getHttpServer())
             .get('/movies')
             .expect(200)
-            .expect([])
+            .expect([]);
         });
 
-        it('POST', () => {
+        test('POST', () => {
           return request(app.getHttpServer())
             .post('/movies')
             .send({
@@ -944,11 +1023,96 @@
             .expect(201);
         });
 
-        it('DELETE', () => {
-          return request(app.getHttpServer())
-            .delete('/movies')
-            .expect(404);
+        test('DELETE', () => {
+          return request(app.getHttpServer()).delete('/movies').expect(404);
         });
+      });
+
+      describe('/movies/:id', () => {
+        test.todo('GET');
+        test.todo('DELETE');
+        test.todo('PATCH');
+      });
+    });
+    ```
+
+### Testing GET movies id
+
+- On `test/app.e2e-spec.ts`
+
+  - ```ts
+    ...
+
+    describe('AppController (e2e)', () => {
+      let app: INestApplication;
+
+      beforeAll(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        await app.init();
+      });
+
+      ...
+
+      describe('/movies/:id', () => {
+        test('GET 200', () => {
+          return request(app.getHttpServer())
+            .get('/movies/1')
+            .expect(200);
+        });
+        test.todo('DELETE');
+        test.todo('PATCH');
+      });
+    });
+    ```
+
+    - It returned `Fail` on GET 200 because `expected 200 "OK", got 404 "Not Found"`.
+
+      - The reason is Movie ID type was `string`, not `number`. We changed the type on `main.ts` as `transform: true`, but it's not applied on the test.
+
+- Add the `ValidationPipe` to the test.
+
+  - ```ts
+    ...
+    import { ..., ValidationPipe } from '@nestjs/common';
+
+    describe('AppController (e2e)', () => {
+      let app: INestApplication;
+
+      beforeAll(async () => {
+        const moduleFixture: TestingModule = await Test.createTestingModule({
+          imports: [AppModule],
+        }).compile();
+
+        app = moduleFixture.createNestApplication();
+        app.useGlobalPipes(
+          new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+            transform: true,
+          }),
+        );
+        await app.init();
+      });
+
+      ...
+
+      describe('/movies/:id', () => {
+        test('GET 200', () => {
+          return request(app.getHttpServer())
+          .get('/movies/1')
+          .expect(200);
+        });
+        test('GET 404', () => {
+          return request(app.getHttpServer())
+          .get('/movies/999')
+          .expect(404);
+        });
+        test.todo('DELETE');
+        test.todo('PATCH');
       });
     });
     ```
