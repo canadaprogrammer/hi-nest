@@ -1012,7 +1012,7 @@
             .expect([]);
         });
 
-        test('POST', () => {
+        test('POST 201', () => {
           return request(app.getHttpServer())
             .post('/movies')
             .send({
@@ -1021,6 +1021,18 @@
               genres: ['Action'],
             })
             .expect(201);
+        });
+
+        test('POST 400', () => {
+          return request(app.getHttpServer())
+            .post('/movies')
+            .send({
+              title: 'Movie',
+              year: 2000,
+              genres: ['Action'],
+              other: 'things',
+            })
+            .expect(400);
         });
 
         test('DELETE', () => {
@@ -1036,7 +1048,7 @@
     });
     ```
 
-### Testing GET movies id
+### Testing GET with movie id
 
 - On `test/app.e2e-spec.ts`
 
@@ -1116,3 +1128,20 @@
       });
     });
     ```
+
+## Testing PATCH AND DELETE with movie id
+
+- ```ts
+  describe('/movies/:id', () => {
+    ...
+    test('PATCH', () => {
+      return request(app.getHttpServer())
+        .patch('/movies/1')
+        .send({ title: 'Updated Test' })
+        .expect(200);
+    });
+    test('DELETE', () => {
+      return request(app.getHttpServer()).delete('/movies/1').expect(200);
+    });
+  });
+  ```

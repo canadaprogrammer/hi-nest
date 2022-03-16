@@ -31,13 +31,10 @@ describe('AppController (e2e)', () => {
 
   describe('/movies', () => {
     test('GET', () => {
-      return request(app.getHttpServer())
-        .get('/movies')
-        .expect(200)
-        .expect([])
+      return request(app.getHttpServer()).get('/movies').expect(200).expect([]);
     });
 
-    test('POST', () => {
+    test('POST 201', () => {
       return request(app.getHttpServer())
         .post('/movies')
         .send({
@@ -47,26 +44,38 @@ describe('AppController (e2e)', () => {
         })
         .expect(201);
     });
+    test('POST 400', () => {
+      return request(app.getHttpServer())
+        .post('/movies')
+        .send({
+          title: 'Movie',
+          year: 2000,
+          genres: ['Action'],
+          other: 'things',
+        })
+        .expect(400);
+    });
 
     test('DELETE', () => {
-      return request(app.getHttpServer())
-        .delete('/movies')
-        .expect(404);
+      return request(app.getHttpServer()).delete('/movies').expect(404);
     });
   });
 
   describe('/movies/:id', () => {
     test('GET 200', () => {
-      return request(app.getHttpServer())
-      .get('/movies/1')
-      .expect(200);
+      return request(app.getHttpServer()).get('/movies/1').expect(200);
     });
     test('GET 404', () => {
-      return request(app.getHttpServer())
-      .get('/movies/999')
-      .expect(404);
+      return request(app.getHttpServer()).get('/movies/999').expect(404);
     });
-    test.todo('DELETE');
-    test.todo('PATCH');
+    test('PATCH', () => {
+      return request(app.getHttpServer())
+        .patch('/movies/1')
+        .send({ title: 'Updated Test' })
+        .expect(200);
+    });
+    test('DELETE', () => {
+      return request(app.getHttpServer()).delete('/movies/1').expect(200);
+    });
   });
 });
